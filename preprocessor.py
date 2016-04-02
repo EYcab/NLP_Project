@@ -1,12 +1,12 @@
-# from keras.preprocessing import sequence
-# from keras.utils import np_utils
-# from keras.models import Sequential
-# from keras.layers.core import Dense, Dropout, Activation
-# from keras.layers.embeddings import Embedding
-# from keras.layers.recurrent import LSTM, GRU
+from keras.preprocessing import sequence
+from keras.utils import np_utils
+from keras.models import Sequential
+from keras.layers.core import Dense, Dropout, Activation
+from keras.layers.embeddings import Embedding
+from keras.layers.recurrent import LSTM, GRU
 
-# import sys
-# import numpy as np
+import sys
+import numpy as np
 
 if __name__ == '__main__':
 	f = open('data/validation_set.txt')   #modify according to what you want
@@ -34,7 +34,7 @@ if __name__ == '__main__':
 			entity_list[-1].append(raw_data[i].strip('\n'))
 			i += 1
 		i += 2
-	l = {}
+	# l = {}
 	for doc in input_doc + input_query:
 		for word in doc:
 			# if(word.startswith('@entity')):
@@ -55,19 +55,20 @@ if __name__ == '__main__':
 		vocab['@entity' + str(j)] = j + 3
 	vocab_size = 1000
 	for word in vocablist:
-		if word in vocab:
+		if word[0] in vocab:
 			continue
 		if(vocab_size >= vocab_limit):
-			vocab[word] = 1  #reserve 1 for OOV, reserve 0 for padding
+			vocab[word[0]] = 1  #reserve 1 for OOV, reserve 0 for padding
 		else:
-			vocab_size += 1			
-			vocab[word] = vocab_size + 3
+			vocab[word[0]] = vocab_size + 3
+			vocab_size += 1
 	for i, doc in enumerate(input_doc):
 		for j, word in enumerate(doc):
 			if word in vocab:
 				input_doc[i][j] = vocab[word]
 			else:
 				input_doc[i][j] = 1
+
 	for i, query in enumerate(input_query):
 		for j, word in enumerate(query):
 			if word in vocab:
@@ -75,5 +76,16 @@ if __name__ == '__main__':
 			else:
 				input_query[i][j] = 1
 	target_word = [vocab[word] for word in target_word]  #assuming every entity is in vocab
+
 	#for Deep reader
-	#input = [query + doc for doc, query in zip(input_doc, input_query)]
+	vocab_size += 1
+	inputs = [query + [vocab_size + 4] + doc for doc, query in zip(input_doc, input_query)]
+	maxlen = 2000
+	frac = 0.8
+	x_train = sequence.pad_sequences(inputs, maxlen=maxlen)
+	x_test = x_train[int(frac*len(x_train)):]
+	x_train = x_train[:int(frac*len(x_train))]
+	y_train = np.zeros((len(target_word), vocab_size))
+	y_train[np.arange(len(y_train)), np.array(target_word)] = 1
+	y_test = y_train[int(frac*len(x_train)):]
+	y_train = y_train[:int(frac*len(x_train))]
