@@ -4,6 +4,7 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
 from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import LSTM, GRU
+import theano
 
 import sys
 import numpy as np
@@ -76,16 +77,33 @@ if __name__ == '__main__':
 			else:
 				input_query[i][j] = 1
 	target_word = [vocab[word] for word in target_word]  #assuming every entity is in vocab
-
 	#for Deep reader
-	vocab_size += 1
 	inputs = [query + [vocab_size + 4] + doc for doc, query in zip(input_doc, input_query)]
+	vocab_size = vocab_size + 4
 	maxlen = 2000
 	frac = 0.8
 	x_train = sequence.pad_sequences(inputs, maxlen=maxlen)
-	x_test = x_train[int(frac*len(x_train)):]
-	x_train = x_train[:int(frac*len(x_train))]
+	x_test = x_train[int(frac*len(target_word)):]
+	x_train = x_train[:int(frac*len(target_word))]
 	y_train = np.zeros((len(target_word), vocab_size))
 	y_train[np.arange(len(y_train)), np.array(target_word)] = 1
-	y_test = y_train[int(frac*len(x_train)):]
-	y_train = y_train[:int(frac*len(x_train))]
+	y_test = y_train[int(frac*len(target_word)):]
+	y_train = y_train[:int(frac*len(target_word))]
+	# model = Sequential()
+	# model.add(Embedding(vocab_size, 128, input_length=maxlen, dropout=0.5))
+	# model.add(LSTM(128, dropout_W=0.5, dropout_U=0.1))  # try using a GRU instead, for fun
+	# model.add(Dropout(0.5))
+	# model.add(Dense(vocab_size))
+	# model.add(Activation('softmax'))
+	# model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
+	# theano.printing.pprint()
+	# print('Train...')
+	# batch_size = 32
+	# model.fit(x_train, y_train, batch_size=batch_size, nb_epoch=15,
+	#           validation_data=(x_test, y_test), show_accuracy=True)
+	# score, acc = model.evaluate(x_test, y_test,
+	#                             batch_size=batch_size,
+	#                             show_accuracy=True)
+	# print('Test score:', score)
+	# print('Test accuracy:', acc)
+
