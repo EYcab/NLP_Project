@@ -5,13 +5,13 @@ from keras.models import Sequential, Graph
 from keras.layers.core import Dense, Dropout, Activation, Lambda, Merge, Masking
 from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import LSTM, GRU
-# from keras.utils.visualize_util import plot
+from keras.utils.visualize_util import plot
 import theano
 
 import sys
 import numpy as np
 
-def train(x_train, y_train, x_test, y_test):
+def train(x_train, y_train, x_test, y_test, vocab_size):
 	model = Sequential()
 	model.add(Embedding(vocab_size, 128, input_length=maxlen, dropout=0.5, mask_zero = True))
 	model.add(LSTM(128, dropout_W=0.5, dropout_U=0.1))  # try using a GRU instead, for fun
