@@ -4,7 +4,7 @@ from keras.models import Sequential, Graph
 from keras.layers.core import Dense, Dropout, Activation, Lambda, Merge, Masking
 from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import LSTM, GRU
-from keras.utils.visualize_util import plot
+# from keras.utils.visualize_util import plot
 import theano
 
 import sys
@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
 	model = Graph()
 	model.add_input(name = 'input', input_shape = (maxlen,), dtype = 'int')
-	model.add_node(Embedding(vocab_size,256, input_length=maxlen, dropout=0.5), input='input', name='emb')
+	model.add_node(Embedding(vocab_size,256, input_length=maxlen, dropout=0.1), input='input', name='emb')
 	model.add_node(LSTM(128, dropout_W=0.1, dropout_U=0.1, return_sequences = True), input = 'emb', name = 'lstm1')
 	model.add_node(Dropout(0.1), input = 'lstm1', name = 'dropout1')
 	model.add_node(LSTM(128, dropout_W=0.1, dropout_U=0.1), input = 'dropout1', name = 'lstm2')

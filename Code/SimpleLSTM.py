@@ -5,7 +5,7 @@ from keras.models import Sequential, Graph
 from keras.layers.core import Dense, Dropout, Activation, Lambda, Merge, Masking
 from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import LSTM, GRU
-from keras.utils.visualize_util import plot
+# from keras.utils.visualize_util import plot
 import theano
 
 import sys
