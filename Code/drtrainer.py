@@ -28,8 +28,8 @@ if __name__ == '__main__':
 		input_query = []                      # list of list of words in query
 		target_word = []                      # list of target words
 		vocab = {}                            # vocabulary
-		# url = []             				  # list of urls, mostly useless
-		# entity_list = []                    # entity listing for each doc, mostly useless
+		url = []             				  # list of urls, mostly useless
+		entity_list = []                    # entity listing for each doc, mostly useless
 		vocab_limit = 50000                   # Will depend on training data
 		i = 0
 
