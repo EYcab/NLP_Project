@@ -14,9 +14,9 @@ import numpy as np
 
 if __name__ == '__main__':
 
-	train_file = '../data/validation_set.txt'
-	valid_file = '../data/validation_set.txt'
-	test_file = '../data/validation_set.txt'
+	train_file = '/home/ee/btech/ee1130504/data/cnn_training_set.txt'
+	valid_file = '/home/ee/btech/ee1130504/data/cnn_validation_set.txt'
+	test_file = '/home/ee/btech/ee1130504/data/cnn_test_set.txt'
 		
 	def process_data(file, training_data = True, vocab = None, vocab_size = None):
 		f = open(file)                        
