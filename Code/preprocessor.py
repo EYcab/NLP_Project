@@ -102,13 +102,6 @@ if __name__ == '__main__':
 	valid_inputs = [query + [vocab['#delim']] + doc for doc, query in zip(valid_input_doc, valid_input_query)]
 	test_inputs = [query + [vocab['#delim']] + doc for doc, query in zip(test_input_doc, test_input_query)]
 
-	x_train = sequence.pad_sequences(inputs, maxlen=maxlen)
-	x_test = x_train[int(frac*len(target_word)):]
-	x_train = x_train[:int(frac*len(target_word))]
-	y_train = np.zeros((len(target_word), vocab_size))
-	y_train[np.arange(len(y_train)), np.array(target_word)] = 1
-	y_test = y_train[int(frac*len(target_word)):]
-	y_train = y_train[:int(frac*len(target_word))]
 	batch_size = 32
 	
 	def get_y_T(X):
