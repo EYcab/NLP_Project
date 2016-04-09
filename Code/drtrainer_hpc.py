@@ -7,9 +7,10 @@ from keras.layers.recurrent import LSTM, GRU
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 # from keras.utils.visualize_util import plot
 import theano
-import pdb
+
 import sys
 import numpy as np
+import pdb
 
 if __name__ == '__main__':
 	
@@ -17,9 +18,9 @@ if __name__ == '__main__':
 	# if it's the training file, generates the vocabulary list. Else we have to pass the vocabulary list 
 	# @entity1 - @entity1000 is part of vocab, hopefully it doesn't go beyond that
 	
-	train_file = '../../data/cnn/questions/cnn_validation_set.txt'
-	valid_file = '../../data/cnn/questions/cnn_validation_set.txt'
-	test_file = '../../data/cnn/questions/cnn_test_set.txt'
+	train_file = '/home/ee/btech/ee1130504/data/cnn_training_set.txt'
+	valid_file = '/home/ee/btech/ee1130504/data/cnn_validation_set.txt'
+	test_file = '/home/ee/btech/ee1130504/data/cnn_test_set.txt'
 	
 	def process_data(file, training_data = True, vocab = None, vocab_size = None):
 		f = open(file)                        
@@ -27,12 +28,13 @@ if __name__ == '__main__':
 		input_doc = []                        # list of list of words in doc
 		input_query = []                      # list of list of words in query
 		target_word = []                      # list of target words
+		# vocab = {}                            # vocabulary => yeh bahut galat kiya aapne
 		url = []             				  # list of urls, mostly useless
-		entity_list = []                      # entity listing for each doc, mostly useless
+		entity_list = []                    # entity listing for each doc, mostly useless
 		vocab_limit = 50000                   # Will depend on training data
 		i = 0
 
-		while i < len(raw_data):
+		while i <len(raw_data):
 			url.append(raw_data[i].strip('\n'))
 			i += 2
 			input_doc.append(raw_data[i].strip('\n').split(' '))
@@ -47,8 +49,9 @@ if __name__ == '__main__':
 				i += 1
 			i += 2
 		# l = {}
+		
 		if not vocab:
-			vocab = {}                            # vocabulary
+			vocab = {}
 			for doc in input_doc + input_query:
 				for word in doc:
 					# if(word.startswith('@entity')):
@@ -104,9 +107,9 @@ if __name__ == '__main__':
 	# frac = 0.8
 	train_inputs = [query + [vocab['#delim']] + doc for doc, query in zip(train_input_doc, train_input_query)]
 	valid_inputs = [query + [vocab['#delim']] + doc for doc, query in zip(valid_input_doc, valid_input_query)]
-	test_inputs  = [query + [vocab['#delim']] + doc for doc, query in zip(test_input_doc, test_input_query)]
+	test_inputs = [query + [vocab['#delim']] + doc for doc, query in zip(test_input_doc, test_input_query)]
 
-	batch_size = 128  #change as gpu memory allows
+	batch_size = 256  #change as gpu memory allows
 	
 	#generator for training data, hopefully understandable
 	def generate_training_batches():
@@ -176,8 +179,10 @@ if __name__ == '__main__':
 
 	def get_y_T(X):
 		return X[:, -1, :]
-		
-	#pdb.set_trace()
+
+	samples_per_epoch = 25600
+	nb_epoch = int((len(train_inputs)/float(samples_per_epoch))*10)
+
 	model = Graph()
 	model.add_input(name = 'input', input_shape = (maxlen,), dtype = 'int')
 	model.add_node(Embedding(vocab_size,256, input_length=maxlen, dropout=0.1), input='input', name='emb')
@@ -206,7 +211,7 @@ if __name__ == '__main__':
 	model_path = '/home/ee/btech/ee1130504/Models/DeepReader/'
 	callbacks.append(ModelCheckpoint(model_path + 'model_weights.{epoch:02d}-{val_loss:.3f}.hdf5', verbose = 1))
 	callbacks.append(EarlyStopping(patience = 10))
-	model.fit_generator(generate_training_batches(), samples_per_epoch = 200, nb_epoch = 5000, validation_data = generate_valid_batches(), nb_val_samples = len(valid_inputs) / batch_size, callbacks = callbacks, show_accuracy = True)
-	score, acc = model.evaluate_generator(generate_test_batches(), val_samples = len(test_inputs) , show_accuracy = True)
+	model.fit_generator(generate_training_batches(), samples_per_epoch = samples_per_epoch, nb_epoch = nb_epoch, validation_data = generate_valid_batches(), nb_val_samples = len(valid_inputs) , callbacks = callbacks, show_accuracy = True)
+	score, acc = model.evaluate_generator(generate_test_batches(), nb_val_samples = len(test_inputs) , show_accuracy = True)
 	print('Test score:', score)
 	print('Test accuracy:', acc)
