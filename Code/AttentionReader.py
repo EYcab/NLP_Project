@@ -6,7 +6,7 @@ from keras.layers.core import *
 from keras import backend as K
 from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import LSTM, GRU
-from keras.utils.visualize_util import plot
+# from keras.utils.visualize_util import plot
 import theano
 
 import sys
@@ -61,7 +61,7 @@ def train(x_train, y_train, x_test, y_test, vocab_size, maxlen, maxdoclen, maxqu
 	model.add_node(Dense(vocab_size, activation = 'softmax'), input = 'embed_g', name = 'output', create_output = True)
 	print model.summary()
 	model.compile(loss = {'output': 'categorical_crossentropy'}, optimizer = 'rmsprop')
-	plot(model, to_file='model.png', show_shape = True)
+	# plot(model, to_file='model.png', show_shape = True)
 	print('Train...')
 	# plot(model, to_file='model.png', show_shape = True)
 	model.fit({'input': x_train, 'output': y_train}, batch_size=batch_size, nb_epoch=15, validation_data={'input': x_test, 'output': y_test}, show_accuracy=True)

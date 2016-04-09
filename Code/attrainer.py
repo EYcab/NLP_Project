@@ -1,8 +1,9 @@
 from keras.preprocessing import sequence
 from keras.utils import np_utils
 from keras.models import Sequential, Graph
-from keras.layers.core import Dense, Dropout, Activation, Lambda, Merge, Masking
+from keras.layers.core import *
 from keras.layers.embeddings import Embedding
+from keras import backend as K
 from keras.layers.recurrent import LSTM, GRU
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 # from keras.utils.visualize_util import plot
@@ -12,6 +13,10 @@ import sys
 import numpy as np
 
 if __name__ == '__main__':
+
+	train_file = '../data/validation_set.txt'
+	valid_file = '../data/validation_set.txt'
+	test_file = '../data/validation_set.txt'
 		
 	def process_data(file, training_data = True, vocab = None, vocab_size = None):
 		f = open(file)                        
@@ -19,28 +24,28 @@ if __name__ == '__main__':
 		input_doc = []                        # list of list of words in doc
 		input_query = []                      # list of list of words in query
 		target_word = []                      # list of target words
-		vocab = {}                            # vocabulary
 		# url = []               				  # list of urls, mostly useless
 		# entity_list = []                      # entity listing for each doc, mostly useless
 		vocab_limit = 50000                   # Will depend on training data
 		i = 0
 
 		while i < len(raw_data):
-			url.append(raw_data[i].strip('\n'))
+			# url.append(raw_data[i].strip('\n'))
 			i += 2
 			input_doc.append(raw_data[i].strip('\n').split(' '))
 			i += 2
 			input_query.append(raw_data[i].strip('\n').split(' '))
 			i += 2
-			# target_word.append(raw_data[i].strip('\n'))
+			target_word.append(raw_data[i].strip('\n'))
 			i += 2
-			entity_list.append([])
+			# entity_list.append([])
 			while(raw_data[i] != '\n'):
 				# entity_list[-1].append(raw_data[i].strip('\n'))
 				i += 1
 			i += 2
 		# l = {}
 		if not vocab:
+			vocab = {}                            # vocabulary
 			for doc in input_doc + input_query:
 				for word in doc:
 					# if(word.startswith('@entity')):
@@ -88,10 +93,6 @@ if __name__ == '__main__':
 		# inputs = [query + [vocab['#delim']] + doc for doc, query in zip(input_doc, input_query)]
 		return input_doc, input_query, target_word, vocab, vocab_size
 	
-	train_file = '/home/ee/btech/ee1130504/data/cnn_training_set.txt'
-	valid_file = '/home/ee/btech/ee1130504/data/cnn_validation_set.txt'
-	test_file = '/home/ee/btech/ee1130504/data/cnn_test_set.txt'
-
 	train_input_doc, train_input_query, train_target_word, vocab, vocab_size = process_data(train_file)
 	valid_input_doc, valid_input_query, valid_target_word, vocab, vocab_size = process_data(valid_file, False, vocab, vocab_size)
 	test_input_doc, test_input_query, test_target_word, vocab, vocab_size = process_data(test_file, False, vocab, vocab_size)
@@ -104,7 +105,7 @@ if __name__ == '__main__':
 	# valid_inputs = [query + [vocab['#delim']] + doc for doc, query in zip(valid_input_doc, valid_input_query)]
 	# test_inputs = [query + [vocab['#delim']] + doc for doc, query in zip(test_input_doc, test_input_query)]
 
-	batch_size = 32
+	batch_size = 16
 	
 	def generate_training_batches():
 		index = 0         #IF I understand correctly, state of index will be saved because it's local
@@ -130,7 +131,7 @@ if __name__ == '__main__':
 			x_train = np.concatenate((x_train_doc, x_train_query), axis = 1)
 			y_train = np.zeros((batch_size, vocab_size))
 			y_train[np.arange(batch_size), np.array(target_slice)] = 1
-			yield {'input': x_train, 'output:' y_train}
+			yield {'input': x_train, 'output': y_train}
 
 	def generate_valid_batches():
 		index = 0
@@ -156,7 +157,7 @@ if __name__ == '__main__':
 			x_valid = np.concatenate((x_valid_doc, x_valid_query), axis = 1)
 			y_valid = np.zeros((batch_size, vocab_size))
 			y_valid[np.arange(batch_size), np.array(target_slice)] = 1
-			yield {'input': x_valid, 'output:' y_valid}
+			yield {'input': x_valid, 'output': y_valid}
 
 	def generate_test_batches():
 		index = 0
@@ -182,13 +183,13 @@ if __name__ == '__main__':
 			x_test = np.concatenate((x_test_doc, x_test_query), axis = 1)
 			y_test = np.zeros((batch_size, vocab_size))
 			y_test[np.arange(batch_size), np.array(target_slice)] = 1
-			yield {'input': x_test, 'output:' y_test}
+			yield {'input': x_test, 'output': y_test}
 
 	def get_y_T(X):
 		return X[:, -1, :]
 
 	def get_query(X):
-		return X[:, maxquerylen:, :]
+		return X[:, maxdoclen:, :]
 
 	def get_doc(X):
 		return X[:, :maxdoclen, :]
@@ -198,6 +199,9 @@ if __name__ == '__main__':
 		exchange = K.permute_dimensions(Y, (0,) + (2,1))
 		ans = K.T.batched_dot(exchange, s_att)
 		return ans
+
+	samples_per_epoch = 25600
+	nb_epoch = int((len(train_input_doc)/float(samples_per_epoch))*10)
 
 	model = Graph()
 	model.add_input(name = 'input', input_shape = (maxlen,), dtype = 'int')
@@ -219,8 +223,8 @@ if __name__ == '__main__':
 	model.add_node(Flatten(), input = 'pre_s', name = 'flattened_pre_s')
 	model.add_node(Activation('softmax'), input = 'flattened_pre_s', name = 's_att')
 	model.add_node(Reshape((maxdoclen,1)), input = 's_att', name = 's_att_res')
-	model.add_node(Lambda(get_R, output_shape = (maxdoclen,1)), inputs = ['dropout2', 's_att'], merge_mode = 'join', name = 'weighted_r_res')
-	model.add_node(Reshape((maxdoclen,)), input = 'weighted_r_res', name = 'weighted_r')
+	model.add_node(Lambda(get_R, output_shape = (256,1)), inputs = ['dropout2', 's_att'], merge_mode = 'join', name = 'weighted_r_res')
+	model.add_node(Reshape((256,)), input = 'weighted_r_res', name = 'weighted_r')
 	model.add_node(Dense(128), input = 'dropout4', name = 'W_g_u')
 	model.add_node(Dense(128), input = 'weighted_r', name = 'W_g_r')
 	model.add_node(Activation('tanh'), inputs = ['W_g_u', 'W_g_r'], merge_mode = 'sum', name = 'embed_g')
@@ -233,8 +237,8 @@ if __name__ == '__main__':
 	callbacks = []
 	model_path = '/home/ee/btech/ee1130504/Models/AttentionReader/'
 	callbacks.append(ModelCheckpoint(model_path + 'model_weights.{epoch:02d}-{val_loss:.3f}.hdf5', verbose = 1))
-	callbacks.append(EarlyStopping(patience = 5))
-	model.fit_generator(generate_training_batches, samples_per_epoch = 200, nb_epoch = 5000, validation_data = generate_valid_batches, nb_valid_samples = len(valid_input_doc) / batch_size, callbacks = callbacks, show_accuracy = True)
-	score, acc = model.evaluate_generator(generate_test_batches, nb_valid_samples = len(test_input_doc) / batch_size, show_accuracy = True)
+	callbacks.append(EarlyStopping(patience = 10))
+	model.fit_generator(generate_training_batches(), samples_per_epoch = samples_per_epoch, nb_epoch = nb_epoch, validation_data = generate_valid_batches(), nb_val_samples = len(valid_input_doc), callbacks = callbacks, show_accuracy = True)
+	score, acc = model.evaluate_generator(generate_test_batches(), nb_val_samples = len(test_input_doc), show_accuracy = True)
 	print('Test score:', score)
 	print('Test accuracy:', acc)
