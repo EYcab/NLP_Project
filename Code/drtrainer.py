@@ -106,7 +106,7 @@ if __name__ == '__main__':
 	valid_inputs = [query + [vocab['#delim']] + doc for doc, query in zip(valid_input_doc, valid_input_query)]
 	test_inputs = [query + [vocab['#delim']] + doc for doc, query in zip(test_input_doc, test_input_query)]
 
-	batch_size = 32  #change as gpu memory allows
+	batch_size = 128  #change as gpu memory allows
 	
 	#generator for training data, hopefully understandable
 	def generate_training_batches():
@@ -204,7 +204,7 @@ if __name__ == '__main__':
 	model_path = '/home/ee/btech/ee1130504/Models/DeepReader/'
 	callbacks.append(ModelCheckpoint(model_path + 'model_weights.{epoch:02d}-{val_loss:.3f}.hdf5', verbose = 1))
 	callbacks.append(EarlyStopping(patience = 10))
-	model.fit_generator(generate_training_batches, samples_per_epoch = 200, nb_epoch = 5000, validation_data = generate_valid_batches, nb_valid_samples = len(valid_inputs) / batch_size, callbacks = callbacks, show_accuracy = True)
-	score, acc = model.evaluate_generator(generate_test_batches, nb_valid_samples = len(test_inputs) / batch_size, show_accuracy = True)
+	model.fit_generator(generate_training_batches, samples_per_epoch = 200, nb_epoch = 5000, validation_data = generate_valid_batches, nb_val_samples = len(valid_inputs) / batch_size, callbacks = callbacks, show_accuracy = True)
+	score, acc = model.evaluate_generator(generate_test_batches, val_samples = len(test_inputs) / batch_size, show_accuracy = True)
 	print('Test score:', score)
 	print('Test accuracy:', acc)
