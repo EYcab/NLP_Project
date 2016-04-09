@@ -12,7 +12,11 @@ import sys
 import numpy as np
 
 if __name__ == '__main__':
-		
+	
+	#for processing the data, of course
+	#if it's the training file, generates the vocabulary list. Else we have to pass the vocabulary list 
+	# @entity1 - @entity1000 is part of vocab, hopefully it doesn't go beyond that
+
 	def process_data(file, training_data = True, vocab = None, vocab_size = None):
 		f = open(file)                        
 		raw_data = f.readlines()
@@ -102,15 +106,13 @@ if __name__ == '__main__':
 	valid_inputs = [query + [vocab['#delim']] + doc for doc, query in zip(valid_input_doc, valid_input_query)]
 	test_inputs = [query + [vocab['#delim']] + doc for doc, query in zip(test_input_doc, test_input_query)]
 
-	batch_size = 32
+	batch_size = 32  #change as gpu memory allows
 	
-	def get_y_T(X):
-		return X[:, -1, :]
-
+	#generator for training data, hopefully understandable
 	def generate_training_batches():
 		index = 0         #IF I understand correctly, state of index will be saved because it's local
 		while True:
-			remaining = len(train_inputs - index)
+			remaining = len(train_inputs) - index
 			input_slice = []
 			target_slice = []
 			if remaining >= batch_size:
@@ -128,10 +130,11 @@ if __name__ == '__main__':
 			y_train[np.arange(batch_size), np.array(target_slice)] = 1
 			yield {'input': x_train, 'output:' y_train}
 
+	#because I don't know how to use one function for training, valid and test
 	def generate_valid_batches():
 		index = 0
 		while True:
-			remaining = len(valid_inputs - index)
+			remaining = len(valid_inputs) - index
 			input_slice = []
 			target_slice = []
 			if remaining >= batch_size:
@@ -152,7 +155,7 @@ if __name__ == '__main__':
 	def generate_test_batches():
 		index = 0
 		while True:
-			remaining = len(test_inputs - index)
+			remaining = len(test_inputs) - index
 			input_slice = []
 			target_slice = []
 			if remaining >= batch_size:
@@ -170,6 +173,9 @@ if __name__ == '__main__':
 			y_test[np.arange(batch_size), np.array(target_slice)] = 1
 			yield {'input': x_test, 'output:' y_test}
 
+	def get_y_T(X):
+		return X[:, -1, :]
+
 	model = Graph()
 	model.add_input(name = 'input', input_shape = (maxlen,), dtype = 'int')
 	model.add_node(Embedding(vocab_size,256, input_length=maxlen, dropout=0.1), input='input', name='emb')
@@ -186,6 +192,14 @@ if __name__ == '__main__':
 	# plot(model, to_file='model2.png', show_shape = True)
 	print('Train...')
 	# plot(model, to_file='model.png', show_shape = True)
+
+	#stuff that can be changed:
+	#patience: number of continuous epochs for which validation loss does not decrease after which to stop training
+	#samples_per_epoch: batch_size * samples_per_epoch is the number of training examples seen per epoch..
+	#.. model is saved to file after one epoch
+	#nb_epoch: Because of Early Stopping this is set to a large number for now
+	#model_path: Folder in which models will be saved <- create this folder
+
 	callbacks = []
 	model_path = '/home/ee/btech/ee1130504/Models/DeepReader/'
 	callbacks.append(ModelCheckpoint(model_path + 'model_weights.{epoch:02d}-{val_loss:.3f}.hdf5', verbose = 1))

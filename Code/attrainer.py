@@ -109,7 +109,7 @@ if __name__ == '__main__':
 	def generate_training_batches():
 		index = 0         #IF I understand correctly, state of index will be saved because it's local
 		while True:
-			remaining = len(train_input_doc - index)
+			remaining = len(train_input_doc) - index
 			input_slice = []
 			target_slice = []
 			if remaining >= batch_size:
@@ -135,7 +135,7 @@ if __name__ == '__main__':
 	def generate_valid_batches():
 		index = 0
 		while True:
-			remaining = len(valid_input_doc - index)
+			remaining = len(valid_input_doc) - index
 			input_slice = []
 			target_slice = []
 			if remaining >= batch_size:
@@ -161,7 +161,7 @@ if __name__ == '__main__':
 	def generate_test_batches():
 		index = 0
 		while True:
-			remaining = len(test_input_doc - index)
+			remaining = len(test_input_doc) - index
 			input_slice = []
 			target_slice = []
 			if remaining >= batch_size:
