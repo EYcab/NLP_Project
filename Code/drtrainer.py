@@ -13,10 +13,14 @@ import numpy as np
 
 if __name__ == '__main__':
 	
-	#for processing the data, of course
-	#if it's the training file, generates the vocabulary list. Else we have to pass the vocabulary list 
+	# for processing the data, of course
+	# if it's the training file, generates the vocabulary list. Else we have to pass the vocabulary list 
 	# @entity1 - @entity1000 is part of vocab, hopefully it doesn't go beyond that
-
+	
+	train_file = '/home/ee/btech/ee1130504/data/cnn_training_set.txt'
+	valid_file = '/home/ee/btech/ee1130504/data/cnn_validation_set.txt'
+	test_file = '/home/ee/btech/ee1130504/data/cnn_test_set.txt'
+	
 	def process_data(file, training_data = True, vocab = None, vocab_size = None):
 		f = open(file)                        
 		raw_data = f.readlines()
@@ -24,8 +28,8 @@ if __name__ == '__main__':
 		input_query = []                      # list of list of words in query
 		target_word = []                      # list of target words
 		vocab = {}                            # vocabulary
-		# url = []               				  # list of urls, mostly useless
-		# entity_list = []                      # entity listing for each doc, mostly useless
+		# url = []             				  # list of urls, mostly useless
+		# entity_list = []                    # entity listing for each doc, mostly useless
 		vocab_limit = 50000                   # Will depend on training data
 		i = 0
 
@@ -91,10 +95,6 @@ if __name__ == '__main__':
 		#for Deep reader
 		# inputs = [query + [vocab['#delim']] + doc for doc, query in zip(input_doc, input_query)]
 		return input_doc, input_query, target_word, vocab, vocab_size
-	
-	train_file = '/home/ee/btech/ee1130504/data/cnn_training_set.txt'
-	valid_file = '/home/ee/btech/ee1130504/data/cnn_validation_set.txt'
-	test_file = '/home/ee/btech/ee1130504/data/cnn_test_set.txt'
 
 	train_input_doc, train_input_query, train_target_word, vocab, vocab_size = process_data(train_file)
 	valid_input_doc, valid_input_query, valid_target_word, vocab, vocab_size = process_data(valid_file, False, vocab, vocab_size)
@@ -128,7 +128,7 @@ if __name__ == '__main__':
 			x_train = sequence.pad_sequences(input_slice, maxlen = maxlen)
 			y_train = np.zeros((batch_size, vocab_size))
 			y_train[np.arange(batch_size), np.array(target_slice)] = 1
-			yield {'input': x_train, 'output:' y_train}
+			yield {'input': x_train, 'output': y_train}
 
 	#because I don't know how to use one function for training, valid and test
 	def generate_valid_batches():
@@ -150,7 +150,7 @@ if __name__ == '__main__':
 			x_valid = sequence.pad_sequences(input_slice, maxlen = maxlen)
 			y_valid = np.zeros((batch_size, vocab_size))
 			y_valid[np.arange(batch_size), np.array(target_slice)] = 1
-			yield {'input': x_valid, 'output:' y_valid}
+			yield {'input': x_valid, 'output': y_valid}
 
 	def generate_test_batches():
 		index = 0
@@ -171,7 +171,7 @@ if __name__ == '__main__':
 			x_test = sequence.pad_sequences(input_slice, maxlen = maxlen)
 			y_test = np.zeros((batch_size, vocab_size))
 			y_test[np.arange(batch_size), np.array(target_slice)] = 1
-			yield {'input': x_test, 'output:' y_test}
+			yield {'input': x_test, 'output': y_test}
 
 	def get_y_T(X):
 		return X[:, -1, :]
@@ -203,7 +203,7 @@ if __name__ == '__main__':
 	callbacks = []
 	model_path = '/home/ee/btech/ee1130504/Models/DeepReader/'
 	callbacks.append(ModelCheckpoint(model_path + 'model_weights.{epoch:02d}-{val_loss:.3f}.hdf5', verbose = 1))
-	callbacks.append(EarlyStopping(patience = 5))
+	callbacks.append(EarlyStopping(patience = 10))
 	model.fit_generator(generate_training_batches, samples_per_epoch = 200, nb_epoch = 5000, validation_data = generate_valid_batches, nb_valid_samples = len(valid_inputs) / batch_size, callbacks = callbacks, show_accuracy = True)
 	score, acc = model.evaluate_generator(generate_test_batches, nb_valid_samples = len(test_inputs) / batch_size, show_accuracy = True)
 	print('Test score:', score)
