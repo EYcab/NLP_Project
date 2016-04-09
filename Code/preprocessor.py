@@ -194,7 +194,8 @@ if __name__ == '__main__':
 	print('Train...')
 	# plot(model, to_file='model.png', show_shape = True)
 	callbacks = []
-	callbacks.append(ModelCheckpoint('model_weights.{epoch:02d}-{val_loss:.3f}.hdf5', verbose = 1))
+	model_path = '/home/ee/btech/ee1130504/Models/DeepReader/'
+	callbacks.append(ModelCheckpoint(model_path + 'model_weights.{epoch:02d}-{val_loss:.3f}.hdf5', verbose = 1))
 	callbacks.append(EarlyStopping(patience = 5))
 	model.fit_generator(generate_training_batches, samples_per_epoch = 200, nb_epoch = 5000, validation_data = generate_valid_batches, nb_valid_samples = len(valid_inputs) / batch_size, callbacks = callbacks, show_accuracy = True)
 	score, acc = model.evaluate_generator(generate_test_batches, nb_valid_samples = len(test_inputs) / batch_size, show_accuracy = True)
